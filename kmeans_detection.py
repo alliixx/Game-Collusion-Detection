@@ -1,6 +1,9 @@
 import numpy as np
 import os
 from game import simulate_game
+from game_hetero import simulate_heterogeneous_game
+from imperfect_collusion_game import simulate_imperfect_collusion_game
+from soft_risky_collusion_game import simulate_risky_collusion_game
 from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score, confusion_matrix
 
@@ -29,7 +32,7 @@ for i in range(num_simulations):
     num_colluders = np.random.randint(2, max(3, num_players // 2))  # at least 2, up to half
 
     sim_dir = f"game_data_{i}"
-    simulate_game(save_dir=sim_dir,
+    simulate_risky_collusion_game(save_dir=sim_dir,
                   seed=i,
                   num_players=num_players,
                   num_colluders=num_colluders)
