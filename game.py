@@ -7,13 +7,15 @@ def compute_payoffs(actions, colluders, honest, num_actions, collusion_reward=1.
     payoffs = np.zeros(num_players)
 
     # Colluder logic: benefit if all colluders play same action
-    colluder_actions = actions[colluders]
-    if np.all(colluder_actions == colluder_actions[0]):
-        reward = collusion_reward + 0.2 * np.random.rand()
-        payoffs[colluders] = reward
-    else:
-        penalty = collusion_penalty * np.random.rand()
-        payoffs[colluders] = penalty
+    if len(colluders) > 0:
+        colluder_actions = actions[colluders]
+        if np.all(colluder_actions == colluder_actions[0]):
+            reward = collusion_reward + 0.2 * np.random.rand()
+            payoffs[colluders] = reward
+        else:
+            penalty = collusion_penalty * np.random.rand()
+            payoffs[colluders] = penalty
+
 
     # Honest player logic: noisy function of consistent strategy
     for i in honest:
@@ -51,7 +53,9 @@ def simulate_game(
     history_actions = np.zeros((num_players, num_rounds), dtype=int)
 
     for t in range(num_rounds):
-        colluder_probs = shared_colluder_weights / shared_colluder_weights.sum()
+        if len(colluding_players) > 0:
+            colluder_probs = shared_colluder_weights / shared_colluder_weights.sum()
+
         probs = weights / weights.sum(axis=1, keepdims=True)
 
         actions = np.zeros(num_players, dtype=int)
@@ -77,24 +81,24 @@ def simulate_game(
             history_rewards[i, t] = rewards[i]
             history_regrets[i, t] = regret
 
-            if i in colluding_players:
+            if i in colluding_players and len(colluding_players) > 0:
                 shared_colluder_weights *= np.exp(eta * counterfactual_payoffs)
             else:
                 weights[i] *= np.exp(eta * counterfactual_payoffs)
 
-    os.makedirs(save_dir, exist_ok=True)
+    # os.makedirs(save_dir, exist_ok=True)
     np.save(os.path.join(save_dir, 'history_rewards.npy'), history_rewards)
     np.save(os.path.join(save_dir, 'history_regrets.npy'), history_regrets)
     np.save(os.path.join(save_dir, 'history_actions.npy'), history_actions)
 
-    print(f"Saved history files to {save_dir}/")
+    # print(f"Saved history files to {save_dir}/")
 
     # ==== PLOTTING ====
 
     cumulative_rewards = history_rewards.sum(axis=1)
     average_regrets = history_regrets.mean(axis=1)
 
-    # # Cumulative Reward Plot
+    # Cumulative Reward Plot
     # plt.figure(figsize=(10, 6))
     # for i in range(num_players):
     #     color = 'red' if i in colluding_players else 'blue'
@@ -149,4 +153,6 @@ def simulate_game(
 
 # Example usage
 if __name__ == "__main__":
-    simulate_game(save_dir='game_data', seed=42)
+    simulate_game(save_dir='game_data')
+
+

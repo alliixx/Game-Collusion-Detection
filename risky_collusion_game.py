@@ -34,7 +34,7 @@ def simulate_risky_collusion_game(
     num_players=10,
     num_colluders=3,
     num_actions=4,
-    num_rounds=100,
+    num_rounds=1000,
     eta=0.1,
     collusion_reward=1.0,
     collusion_penalty=0.2,
@@ -122,12 +122,12 @@ def simulate_risky_collusion_game(
         history_rewards[:, t] = rewards
         history_regrets[:, t] = regrets
 
-    os.makedirs(save_dir, exist_ok=True)
+    # os.makedirs(save_dir, exist_ok=True)
     np.save(os.path.join(save_dir, 'history_rewards.npy'), history_rewards)
     np.save(os.path.join(save_dir, 'history_regrets.npy'), history_regrets)
     np.save(os.path.join(save_dir, 'history_actions.npy'), history_actions)
 
-    print(f"Saved to {save_dir}")
+    # print(f"Saved to {save_dir}")
 
     cumulative_rewards = history_rewards.sum(axis=1)
     average_regrets = history_regrets.mean(axis=1)

@@ -6,7 +6,7 @@ def simulate_budgeted_auction_game(
     save_dir='budgeted_auction_game',
     num_players=10,
     num_colluders=3,
-    num_items=100,
+    num_items=1000,
     base_item_value=1.0,
     initial_budget=10.0,
     honest_participation_prob=0.7,
@@ -37,7 +37,7 @@ def simulate_budgeted_auction_game(
         values = np.zeros(num_players)
 
         for i in range(num_players):
-            if budgets[i] <= 0:
+            if budgets[i] <= 1e-3:
                 continue
 
             if i in colluders:
@@ -46,10 +46,10 @@ def simulate_budgeted_auction_game(
                     continue
 
                 if i == colluder_allocation[t]:
-                    value = item_value * (1.05 + 0.05 * np.random.rand())
+                    value = item_value * (0.9 + 0.05 * np.random.rand())
                     bid = min(value, budgets[i])
                 else:
-                    value = item_value * np.random.uniform(0.2, 0.5)
+                    value = item_value * np.random.uniform(0.1, 0.3)
                     bid = min(value, budgets[i])
             else:
                 if np.random.rand() > honest_participation_prob:
@@ -66,13 +66,20 @@ def simulate_budgeted_auction_game(
             bids[i] = bid
             values[i] = value
 
-        valid_bidders = np.where(bids > 0)[0]
-        if len(valid_bidders) < 2:
+        BID_THRESHOLD = 1e-3
+        positive_bidders = np.array([i for i in range(num_players) if bids[i] > BID_THRESHOLD])
+
+        if len(positive_bidders) < 2:
+            #print(f"Round {t}: No valid positive bids — skipping auction.")
             continue
 
-        sorted_indices = valid_bidders[np.argsort(-bids[valid_bidders])]
+
+        sorted_indices = positive_bidders[np.argsort(-bids[positive_bidders])]
+
+
         winner = sorted_indices[0]
-        second_price = bids[sorted_indices[1]]
+        second_price = bids[sorted_indices[1]] if len(sorted_indices) > 1 else 0.0
+
         payment = second_price
         value_winner = values[winner]
 
@@ -80,6 +87,7 @@ def simulate_budgeted_auction_game(
             profit = value_winner - payment
             profits[winner, t] = profit
             budgets[winner] -= payment
+            #print(f"Round {t}: Player {winner} wins at price {payment:.2f}, remaining budget: {budgets[winner]:.2f}")
         else:
             profit = 0
 
@@ -121,56 +129,58 @@ def simulate_budgeted_auction_game(
     cum_profits = profits.cumsum(axis=1)
     cumulative_regrets = regrets.sum(axis=1)
 
-    plt.figure(figsize=(10, 5))
-    for i in range(num_players):
-        color = 'red' if i in colluders else 'blue'
-        plt.bar(i, cumulative_rewards[i], color=color)
-    plt.xlabel("Player ID")
-    plt.ylabel("Cumulative Reward")
-    plt.title("Cumulative Reward per Player")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    # plt.figure(figsize=(10, 5))
+    # for i in range(num_players):
+    #     color = 'red' if i in colluders else 'blue'
+    #     plt.bar(i, cumulative_rewards[i], color=color)
+    # plt.xlabel("Player ID")
+    # plt.ylabel("Cumulative Reward")
+    # plt.title("Cumulative Reward per Player")
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
 
-    plt.figure(figsize=(10, 5))
-    for i in range(num_players):
-        color = 'red' if i in colluders else 'blue'
-        plt.bar(i, cumulative_regrets[i], color=color)
-    plt.xlabel("Player ID")
-    plt.ylabel("Cumulative Regret")
-    plt.title("Cumulative Regret per Player")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    # plt.figure(figsize=(10, 5))
+    # for i in range(num_players):
+    #     color = 'red' if i in colluders else 'blue'
+    #     plt.bar(i, cumulative_regrets[i], color=color)
+    # plt.xlabel("Player ID")
+    # plt.ylabel("Cumulative Regret")
+    # plt.title("Cumulative Regret per Player")
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
 
-    plt.figure(figsize=(10, 6))
-    for i in range(num_players):
-        color = 'red' if i in colluders else 'blue'
-        plt.plot(cum_profits[i], label=f'Player {i}', color=color)
-    plt.title("Cumulative Profit Over Time")
-    plt.xlabel("Item Round")
-    plt.ylabel("Cumulative Profit")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    # plt.figure(figsize=(10, 6))
+    # for i in range(num_players):
+    #     color = 'red' if i in colluders else 'blue'
+    #     plt.plot(cum_profits[i], label=f'Player {i}', color=color)
+    # plt.title("Cumulative Profit Over Time")
+    # plt.xlabel("Item Round")
+    # plt.ylabel("Cumulative Profit")
+    # plt.legend()
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
 
-    plt.figure(figsize=(10, 6))
-    for i in range(num_players):
-        color = 'red' if i in colluders else 'blue'
-        avg_regret = np.cumsum(regrets[i]) / (np.arange(1, num_items + 1))
-        plt.plot(avg_regret, label=f'Player {i}', color=color)
-    plt.title("Average Regret Over Time")
-    plt.xlabel("Item Round")
-    plt.ylabel("Average Regret")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    # plt.figure(figsize=(10, 6))
+    # for i in range(num_players):
+    #     color = 'red' if i in colluders else 'blue'
+    #     avg_regret = np.cumsum(regrets[i]) / (np.arange(1, num_items + 1))
+    #     plt.plot(avg_regret, label=f'Player {i}', color=color)
+    # plt.title("Average Regret Over Time")
+    # plt.xlabel("Item Round")
+    # plt.ylabel("Average Regret")
+    # plt.legend()
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
+
+
 
 
     return save_dir
 
 # === Sample usage ===
 if __name__ == "__main__":
-    simulate_budgeted_auction_game(seed=42)
+    simulate_budgeted_auction_game()
