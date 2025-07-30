@@ -29,7 +29,7 @@ test_simulations = 100
 num_players_range = (4, 20)
 
 game_types = {
-    #"normal": simulate_game,
+    "normal": simulate_game,
     "risky": simulate_risky_collusion_game,
     "auction": simulate_budgeted_auction_game
 }
