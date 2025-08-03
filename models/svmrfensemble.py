@@ -35,8 +35,10 @@ def run_single_auction(sim_func, num_players, colluding_ids, num_items):
 def generate_dataset(sim_func, sim_type, num_sims=30, num_rounds=300):
     X, y = [], []
     for _ in range(num_sims):
-        num_players = np.random.randint(3, 11)
-        colluding_ids = np.random.choice(num_players, size=max(1, num_players // 3), replace=False).tolist()
+        num_players = np.random.randint(4, 21)
+        max_colluders = max(3, num_players // 2)
+        colluding_ids = np.random.choice(num_players, size=np.random.randint(1, max_colluders + 1), replace=False).tolist()
+
 
         if sim_type == "auction":
             rewards, regrets, labels = run_single_auction(sim_func, num_players, colluding_ids, num_rounds)
@@ -89,19 +91,27 @@ def plot_f1_over_time(env_results, label="F1 Score", window=5, save_path="f1_sco
     plt.close()
 
 # run pipeline
-X_homo, y_homo = generate_dataset(simulate_game, "homo")
-X_hetero, y_hetero = generate_dataset(simulate_risky_collusion_game, "hetero")
-X_auction, y_auction = generate_dataset(simulate_budgeted_auction_game, "auction")
+X_homo, y_homo = generate_dataset(simulate_game, "homo", num_sims=600)
+X_train_homo, y_train_homo = X_homo[:500], y_homo[:500]
+X_test_homo, y_test_homo = X_homo[500:], y_homo[500:]
 
-X_all = np.vstack([X_homo, X_hetero, X_auction])
-y_all = np.concatenate([y_homo, y_hetero, y_auction])
+X_hetero, y_hetero = generate_dataset(simulate_risky_collusion_game, "hetero", num_sims=600)
+X_train_hetero, y_train_hetero = X_hetero[:500], y_hetero[:500]
+X_test_hetero, y_test_hetero = X_hetero[500:], y_hetero[500:]
 
-ensemble_predict_fn = train_rf_svm_ensemble(X_all, y_all)
+X_auction, y_auction = generate_dataset(simulate_budgeted_auction_game, "auction", num_sims=600)
+X_train_auction, y_train_auction = X_auction[:500], y_auction[:500]
+X_test_auction, y_test_auction = X_auction[500:], y_auction[500:]
+
+X_all_train = np.vstack([X_train_homo, X_train_hetero, X_train_auction])
+y_all_train = np.concatenate([y_train_homo, y_train_hetero, y_train_auction])
+
+ensemble_predict_fn = train_rf_svm_ensemble(X_all_train, y_all_train)
 
 env_data = {
-    "Homogeneous": (X_homo, y_homo),
-    "Heterogeneous": (X_hetero, y_hetero),
-    "Auction": (X_auction, y_auction)
+    "Homogeneous": (X_test_homo, y_test_homo),
+    "Heterogeneous": (X_test_hetero, y_test_hetero),
+    "Auction": (X_test_auction, y_test_auction)
 }
 
 results = {}
